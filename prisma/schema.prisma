@@ -139,6 +139,22 @@ model Payout {
   @@index([status, createdAt])
 }
 
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  provider    String
+  eventKey    String   @unique
+  eventType   String
+  payload     Json
+  status      WebhookEventStatus @default(RECEIVED)
+  error       String?
+  receivedAt  DateTime @default(now())
+  processedAt DateTime?
+  updatedAt   DateTime @updatedAt
+
+  @@index([provider, eventType, receivedAt])
+  @@index([status, receivedAt])
+}
+
 enum AccountType { INDIVIDUAL BUSINESS }
 enum VerificationStatus { NOT_STARTED IN_REVIEW ACTION_REQUIRED VERIFIED REJECTED EXPIRED }
 enum BusinessRole { OWNER ADMIN FINANCE DEVELOPER SUPPORT VIEWER }
@@ -147,3 +163,4 @@ enum WalletStatus { ACTIVE SUSPENDED CLOSED }
 enum LedgerDirection { DEBIT CREDIT }
 enum PaymentStatus { PENDING PROCESSING SUCCESS FAILED CANCELLED EXPIRED REFUNDED }
 enum PayoutStatus { PENDING PROCESSING SUCCESS FAILED CANCELLED }
+enum WebhookEventStatus { RECEIVED PROCESSING PROCESSED FAILED }
