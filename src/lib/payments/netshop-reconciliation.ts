@@ -12,8 +12,24 @@ export type NetShopCharge = {
   failed_reason?: string | null;
 };
 
+/**
+ * Reads a charge directly from NetShop for reconciliation.
+ * Monetary values are returned by NetShop as numbers here only because this
+ * type mirrors the provider response. Convert to minor units before posting
+ * anything to the financial ledger.
+ */
 export async function getNetShopCharge(idOrReference: string): Promise<NetShopCharge> {
-  const response = await fetch(`${env.NETSHOP_API_BASE_URL}/charges/${encodeURIComponent(idOrReference)}`, {
+  const baseUrl = env.NETSHOP_API_URL?.replace(/\/$/, '');
+
+  if (!baseUrl || !env.NETSHOP_API_KEY || !env.NETSHOP_WALLET_ID) {
+    throw new Error('NETSHOP_CONFIGURATION_INCOMPLETE');
+  }
+
+  if (!idOrReference.trim()) {
+    throw new Error('NETSHOP_CHARGE_REFERENCE_REQUIRED');
+  }
+
+  const response = await fetch(`${baseUrl}/charges/${encodeURIComponent(idOrReference)}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${env.NETSHOP_API_KEY}`,
