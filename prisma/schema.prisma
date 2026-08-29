@@ -17,6 +17,9 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   organizations OrganizationMember[]
+  wallets       Wallet[]
+  payments      Payment[]
+  payouts       Payout[]
 }
 
 model Organization {
@@ -28,6 +31,9 @@ model Organization {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   members       OrganizationMember[]
+  wallets       Wallet[]
+  payments      Payment[]
+  payouts       Payout[]
 }
 
 model OrganizationMember {
@@ -42,25 +48,102 @@ model OrganizationMember {
   @@unique([userId, organizationId])
 }
 
-enum AccountType {
-  INDIVIDUAL
-  BUSINESS
+model Wallet {
+  id             String       @id @default(cuid())
+  userId         String?
+  organizationId String?
+  currency       Currency     @default(MZN)
+  status         WalletStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entries        LedgerEntry[]
+  payments       Payment[]
+  payouts        Payout[]
+
+  @@index([userId, currency])
+  @@index([organizationId, currency])
 }
 
-enum VerificationStatus {
-  NOT_STARTED
-  IN_REVIEW
-  ACTION_REQUIRED
-  VERIFIED
-  REJECTED
-  EXPIRED
+model LedgerTransaction {
+  id          String        @id @default(cuid())
+  reference   String        @unique
+  description String?
+  metadata    Json?
+  createdAt   DateTime      @default(now())
+  entries     LedgerEntry[]
 }
 
-enum BusinessRole {
-  OWNER
-  ADMIN
-  FINANCE
-  DEVELOPER
-  SUPPORT
-  VIEWER
+model LedgerEntry {
+  id            String           @id @default(cuid())
+  transactionId String
+  walletId      String
+  amountMinor   BigInt
+  direction     LedgerDirection
+  currency      Currency
+  reference     String
+  createdAt     DateTime         @default(now())
+  transaction   LedgerTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  wallet        Wallet            @relation(fields: [walletId], references: [id], onDelete: Restrict)
+
+  @@index([walletId, currency, createdAt])
+  @@index([reference])
 }
+
+model Payment {
+  id                 String        @id @default(cuid())
+  reference          String        @unique
+  provider           String
+  providerPaymentId  String?
+  userId             String?
+  organizationId     String?
+  walletId           String?
+  amountMinor        BigInt
+  feeMinor           BigInt        @default(0)
+  currency           Currency
+  status             PaymentStatus @default(PENDING)
+  idempotencyKey     String        @unique
+  description        String?
+  metadata           Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  user               User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  wallet             Wallet?      @relation(fields: [walletId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([provider, providerPaymentId])
+}
+
+model Payout {
+  id                String        @id @default(cuid())
+  reference         String        @unique
+  provider          String
+  providerPayoutId  String?
+  userId            String?
+  organizationId    String?
+  walletId          String
+  amountMinor       BigInt
+  feeMinor          BigInt        @default(0)
+  currency          Currency
+  status            PayoutStatus  @default(PENDING)
+  destination       Json
+  idempotencyKey    String        @unique
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  user              User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization      Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  wallet            Wallet        @relation(fields: [walletId], references: [id], onDelete: Restrict)
+
+  @@index([status, createdAt])
+}
+
+enum AccountType { INDIVIDUAL BUSINESS }
+enum VerificationStatus { NOT_STARTED IN_REVIEW ACTION_REQUIRED VERIFIED REJECTED EXPIRED }
+enum BusinessRole { OWNER ADMIN FINANCE DEVELOPER SUPPORT VIEWER }
+enum Currency { MZN USD EUR ZAR }
+enum WalletStatus { ACTIVE SUSPENDED CLOSED }
+enum LedgerDirection { DEBIT CREDIT }
+enum PaymentStatus { PENDING PROCESSING SUCCESS FAILED CANCELLED EXPIRED REFUNDED }
+enum PayoutStatus { PENDING PROCESSING SUCCESS FAILED CANCELLED }
