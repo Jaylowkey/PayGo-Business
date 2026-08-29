@@ -6,6 +6,10 @@ const envSchema = z.object({
   PAYGO_API_BASE_URL: z.string().url().optional(),
   NETSHOP_API_URL: z.string().url().optional(),
   NETSHOP_API_KEY: z.string().optional(),
+  DIDIT_API_KEY: z.string().optional(),
+  DIDIT_KYC_WORKFLOW_ID: z.string().optional(),
+  DIDIT_KYB_WORKFLOW_ID: z.string().optional(),
+  DIDIT_WEBHOOK_SECRET: z.string().optional(),
 });
 
 export const env = envSchema.parse({
@@ -14,4 +18,8 @@ export const env = envSchema.parse({
   PAYGO_API_BASE_URL: process.env.PAYGO_API_BASE_URL,
   NETSHOP_API_URL: process.env.NETSHOP_API_URL,
   NETSHOP_API_KEY: process.env.NETSHOP_API_KEY,
+  DIDIT_API_KEY: process.env.DIDIT_API_KEY,
+  DIDIT_KYC_WORKFLOW_ID: process.env.DIDIT_KYC_WORKFLOW_ID,
+  DIDIT_KYB_WORKFLOW_ID: process.env.DIDIT_KYB_WORKFLOW_ID,
+  DIDIT_WEBHOOK_SECRET: process.env.DIDIT_WEBHOOK_SECRET,
 });
