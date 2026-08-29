@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 import { parseNetShopWebhook, verifyNetShopSignature } from '@/lib/payments/netshop-webhook';
+import { claimWebhookEvent, webhookEventKey } from '@/lib/payments/webhook-events';
 
 export const runtime = 'nodejs';
 
@@ -14,10 +15,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const event = parseNetShopWebhook(rawBody);
+    const claimed = await claimWebhookEvent(
+      webhookEventKey(rawBody, event.id),
+      event.type,
+      event.data,
+    );
 
-    // Persistence and settlement are deliberately handled after signature
-    // verification. Unknown event types are acknowledged safely so NetShop
-    // does not retry events the PayGo application does not consume yet.
+    if (!claimed) return NextResponse.json({ received: true, duplicate: true });
+
     switch (event.type) {
       case 'charge.paid':
       case 'charge.failed':
