@@ -8,6 +8,7 @@ const envSchema = z.object({
   NETSHOP_API_KEY: z.string().optional(),
   NETSHOP_WALLET_ID: z.string().optional(),
   NETSHOP_WEBHOOK_SECRET: z.string().optional(),
+  ADMIN_PAYOUT_KEY: z.string().min(16).optional(),
   DIDIT_API_KEY: z.string().optional(),
   DIDIT_KYC_WORKFLOW_ID: z.string().optional(),
   DIDIT_KYB_WORKFLOW_ID: z.string().optional(),
@@ -22,6 +23,7 @@ export const env = envSchema.parse({
   NETSHOP_API_KEY: process.env.NETSHOP_API_KEY,
   NETSHOP_WALLET_ID: process.env.NETSHOP_WALLET_ID,
   NETSHOP_WEBHOOK_SECRET: process.env.NETSHOP_WEBHOOK_SECRET,
+  ADMIN_PAYOUT_KEY: process.env.ADMIN_PAYOUT_KEY,
   DIDIT_API_KEY: process.env.DIDIT_API_KEY,
   DIDIT_KYC_WORKFLOW_ID: process.env.DIDIT_KYC_WORKFLOW_ID,
   DIDIT_KYB_WORKFLOW_ID: process.env.DIDIT_KYB_WORKFLOW_ID,
@@ -42,4 +44,9 @@ export function requireNetShopConfig() {
 export function requireNetShopWebhookSecret() {
   if (!env.NETSHOP_WEBHOOK_SECRET) throw new Error("NETSHOP_WEBHOOK_SECRET_MISSING");
   return env.NETSHOP_WEBHOOK_SECRET;
+}
+
+export function requireAdminPayoutKey(provided?: string | null) {
+  if (!env.ADMIN_PAYOUT_KEY) throw new Error("ADMIN_PAYOUT_KEY_MISSING");
+  if (!provided || provided !== env.ADMIN_PAYOUT_KEY) throw new Error("ADMIN_PAYOUT_UNAUTHORIZED");
 }
